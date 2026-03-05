@@ -1,14 +1,14 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "github-rag: build extension",
-      "type": "shell",
-      "command": "npm run compile",
-      "options": {
-        "cwd": "${workspaceFolder}/extension"
-      },
-      "problemMatcher": []
-    }
-  ]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "github-rag: build extension",
+            "type": "shell",
+            "command": "npm run compile",
+            "options": {
+                "cwd": "${workspaceFolder}/extension"
+            },
+            "problemMatcher": []
+        }
+    ]
 }
