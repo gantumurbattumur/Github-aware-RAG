@@ -4,6 +4,7 @@
     "description": "Semantic code reference search across your GitHub repos and starred repos",
     "version": "0.0.1",
     "publisher": "github-rag",
+    "icon": "resources/icon.png",
     "license": "MIT",
     "engines": {
         "vscode": "^1.85.0"

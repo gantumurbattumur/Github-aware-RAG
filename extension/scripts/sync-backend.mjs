@@ -9,30 +9,30 @@ const sourceDir = path.resolve(__dirname, "../../backend");
 const targetDir = path.resolve(__dirname, "../backend");
 
 if (!fs.existsSync(sourceDir)) {
-  console.error(`[sync-backend] Source backend directory not found: ${sourceDir}`);
-  process.exit(1);
+    console.error(`[sync-backend] Source backend directory not found: ${sourceDir}`);
+    process.exit(1);
 }
 
 const shouldInclude = (srcPath) => {
-  const name = path.basename(srcPath);
+    const name = path.basename(srcPath);
 
-  if (name === ".venv" || name === "__pycache__") {
-    return false;
-  }
+    if (name === ".venv" || name === "__pycache__") {
+        return false;
+    }
 
-  if (name.endsWith(".pyc") || name.endsWith(".pyo")) {
-    return false;
-  }
+    if (name.endsWith(".pyc") || name.endsWith(".pyo")) {
+        return false;
+    }
 
-  return true;
+    return true;
 };
 
 fs.rmSync(targetDir, { recursive: true, force: true });
 fs.mkdirSync(targetDir, { recursive: true });
 
 fs.cpSync(sourceDir, targetDir, {
-  recursive: true,
-  filter: shouldInclude,
+    recursive: true,
+    filter: shouldInclude,
 });
 
 console.log(`[sync-backend] Copied backend -> ${targetDir}`);
