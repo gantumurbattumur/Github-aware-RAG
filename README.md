@@ -1,38 +1,60 @@
 # GitHub-Aware-RAG
 
-A semantic code reference tool for VS Code. Indexes your personal GitHub repositories and starred repos into a local vector database, letting you search across your entire coding history using natural language — without leaving your editor.
+GitHub-Aware-RAG is a VS Code extension that lets you semantically search your own GitHub repos and starred repos without leaving your editor.
 
-## Features
+## Why I built this
 
-- **Natural language search** — Ask questions like "how did I handle JWT refresh tokens" and get relevant code snippets
-- **Dual-track index** — Searches both your own repos (personal history) and starred repos (curated reference library)
-- **Local & private** — All data stored locally in ChromaDB. No cloud required for querying.
-- **VS Code sidebar** — Integrated panel with search, results, and repo management
+I built this because I wanted my GitHub code references available inside the same workspace. I was tired of manually digging through personal repos and starred repos every time I needed an old pattern, utility, or implementation detail.
 
-## Architecture
+## What it does
 
-```
-┌──────────────────┐     postMessage      ┌──────────────────┐     HTTP      ┌──────────────────┐
-│  React Webview   │ ◄──────────────────► │  Extension Host  │ ◄──────────► │  FastAPI Backend │
-│  (Sidebar Panel) │                      │  (TypeScript)    │              │  (Python, local) │
-└──────────────────┘                      └──────────────────┘              └──────────────────┘
-                                                                                     │
-                                                                           ┌─────────┴─────────┐
-                                                                           │                   │
-                                                                      ChromaDB           GitHub API
-                                                                   (local vectors)      (PyGithub)
-```
+- Connects to your GitHub account.
+- Indexes selected repositories (personal + starred).
+- Chunks code files and stores embeddings locally.
+- Lets you ask natural-language questions and returns relevant code snippets with source links.
 
-## Prerequisites
+## Real use cases
 
-- **Node.js** ≥ 18
-- **Python** ≥ 3.10
-- **OpenAI API key** (for embeddings and answer generation)
-- **GitHub account** (OAuth handled by VS Code)
+- **Find your old implementation quickly**  
+   “Where did I implement JWT refresh token rotation?”
 
-## Setup
+- **Reuse your own patterns**  
+   “Show me how I handled retry with exponential backoff before.”
 
-### Backend
+- **Search starred repos as reference docs**  
+   “Find React query cache invalidation examples from repos I starred.”
+
+- **Stay in flow while coding**  
+   Search history/reference code from the sidebar instead of switching tabs to GitHub.
+
+## How search works
+
+Search is semantic (embedding-based), not plain keyword grep.
+
+1. Your query is embedded using `text-embedding-3-small`.
+2. The backend queries ChromaDB collections (`personal_repos` and/or `starred_repos`) by vector similarity.
+3. Results are merged and sorted by similarity score.
+4. A short relevance explanation is generated for each result.
+
+## Project scope (simple on purpose)
+
+This is a local/personal productivity project first:
+
+- Single-user local backend (FastAPI).
+- Local vector storage (ChromaDB).
+- Local metadata tracking (SQLite).
+- No multi-tenant infrastructure, billing, or cloud deployment complexity.
+
+## Requirements
+
+- Node.js `>= 18`
+- Python `>= 3.10`
+- OpenAI API key
+- GitHub account (VS Code authentication)
+
+## Quick start (local)
+
+### 1) Backend
 
 ```bash
 cd backend
@@ -41,7 +63,7 @@ uv lock
 uv sync --frozen
 ```
 
-### Extension
+### 2) Extension
 
 ```bash
 cd extension
@@ -49,25 +71,36 @@ npm install
 npm run compile
 ```
 
-### Running
+### 3) Run in VS Code
 
-1. Open the project in VS Code
-2. Press **F5** to launch the Extension Development Host
-3. Click the **GitHub RAG** icon in the activity bar
-4. Sign in with GitHub when prompted
-5. Select repos to index, then search!
+1. Open the repo in VS Code.
+2. Press `F5` to open Extension Development Host.
+3. Open **GitHub RAG** from the Activity Bar.
+4. Sign in to GitHub.
+5. Set your OpenAI API key in settings.
+6. Index repos and start searching.
 
 ## Configuration
 
-| Setting                   | Description                                | Default            |
-| ------------------------- | ------------------------------------------ | ------------------ |
-| `github-rag.openaiApiKey` | OpenAI API key for embeddings & generation | —                  |
-| `github-rag.pythonPath`   | Path to Python interpreter                 | `.venv/bin/python` |
-| `github-rag.backendPort`  | Port for the local FastAPI server          | `8747`             |
+| Setting                   | Description                                            | Default            |
+| ------------------------- | ------------------------------------------------------ | ------------------ |
+| `github-rag.openaiApiKey` | OpenAI API key for embeddings + explanation generation | `""`               |
+| `github-rag.pythonPath`   | Python interpreter used by backend                     | `.venv/bin/python` |
+| `github-rag.backendPort`  | Local FastAPI backend port                             | `8747`             |
 
-## Data Storage
+## Local data
 
-All data is stored locally at `~/.github-rag/`:
+Data is stored at `~/.github-rag/`:
 
-- `chroma_db/` — ChromaDB persistent vector store
-- `metadata.db` — SQLite file metadata for stale chunk tracking
+- `chroma_db/` — vector index
+- `metadata.db` — file/chunk metadata used for incremental re-indexing
+
+## Privacy notes
+
+- Repository content is indexed locally.
+- Embeddings and snippet explanations use OpenAI API (network call).
+- You control which repos are indexed.
+
+## Current status
+
+Working MVP focused on practical personal use. Expect incremental improvements rather than enterprise-level surface area.
