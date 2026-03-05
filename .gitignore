@@ -1,0 +1,28 @@
+# Node
+node_modules/
+dist/
+*.vsix
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Runtime data
+.github-rag/
+
+# IDE
+.vscode/settings.json
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
