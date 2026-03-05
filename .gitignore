@@ -16,7 +16,7 @@ venv/
 extension/scripts/.backend-sync-manifest.json
 
 # IDE
-.vscode/settings.json
+.vscode/
 *.swp
 *.swo
 

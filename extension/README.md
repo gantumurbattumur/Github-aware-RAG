@@ -35,6 +35,12 @@ Install the generated `.vsix` and open the extension from the activity bar.
 
 Set your key via Command Palette: `GitHub RAG: Set OpenAI API Key`.
 
+Prepare a release version locally:
+
+```bash
+npm run release:prepare -- --version 0.0.2
+```
+
 ## Settings
 
 - `github-rag.openaiApiKey` (legacy fallback; preferred storage is SecretStorage)

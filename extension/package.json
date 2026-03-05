@@ -94,6 +94,7 @@
     },
     "scripts": {
         "sync:backend": "node scripts/sync-backend.mjs",
+        "release:prepare": "node scripts/release-prepare.mjs",
         "compile": "npm run sync:backend && node esbuild.js",
         "watch": "node esbuild.js --watch",
         "package": "npm run sync:backend && node esbuild.js --production",
