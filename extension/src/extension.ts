@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { spawn, ChildProcess } from "child_process";
+import * as fs from "fs";
 import * as path from "path";
 import { getGitHubSession, onSessionChanged } from "./auth";
 import { BackendClient } from "./backendClient";
@@ -99,8 +100,28 @@ async function startBackend(
     port: number
 ): Promise<void> {
     const config = vscode.workspace.getConfiguration("github-rag");
-    const pythonPath = config.get<string>("pythonPath") || ".venv/bin/python";
-    const backendDir = path.join(context.extensionPath, "..", "backend");
+    const configuredPythonPath = config.get<string>("pythonPath") || ".venv/bin/python";
+    const backendDir = resolveBackendDirectory(context);
+    const pythonPath = resolvePythonPath(configuredPythonPath, backendDir);
+
+    if (!fs.existsSync(path.join(backendDir, "main.py"))) {
+        throw new Error(`Backend files not found in ${backendDir}`);
+    }
+
+    if (!fs.existsSync(pythonPath)) {
+        outputChannel.appendLine(`[Backend] Python interpreter not found: ${pythonPath}`);
+        if (configuredPythonPath === ".venv/bin/python") {
+            outputChannel.appendLine("[Backend] Bootstrapping local backend environment via uv sync --frozen...");
+            await ensureBackendEnvironment(backendDir);
+        }
+    }
+
+    if (!fs.existsSync(pythonPath)) {
+        throw new Error(
+            `Python interpreter not found: ${pythonPath}. ` +
+            `Set github-rag.pythonPath to a valid interpreter, or install uv and run 'uv sync --frozen' in ${backendDir}`
+        );
+    }
 
     outputChannel.appendLine(`[Backend] Starting: ${pythonPath} -m uvicorn main:app --host 127.0.0.1 --port ${port}`);
     outputChannel.appendLine(`[Backend] Working directory: ${backendDir}`);
@@ -177,6 +198,83 @@ async function startBackend(
 
         // Start polling after a brief delay to let the process start
         setTimeout(pollHealth, 500);
+    });
+}
+
+function resolveBackendDirectory(context: vscode.ExtensionContext): string {
+    const bundledBackend = path.join(context.extensionPath, "backend");
+    const monorepoBackend = path.join(context.extensionPath, "..", "backend");
+
+    if (fs.existsSync(path.join(bundledBackend, "main.py"))) {
+        return bundledBackend;
+    }
+
+    if (fs.existsSync(path.join(monorepoBackend, "main.py"))) {
+        return monorepoBackend;
+    }
+
+    return bundledBackend;
+}
+
+function resolvePythonPath(configValue: string, backendDir: string): string {
+    if (path.isAbsolute(configValue)) {
+        return configValue;
+    }
+    return path.join(backendDir, configValue);
+}
+
+async function ensureBackendEnvironment(backendDir: string): Promise<void> {
+    const uvResult = await runCommand("uv", ["--version"], backendDir);
+    if (uvResult.exitCode !== 0) {
+        throw new Error("uv is required for first-time backend setup, but it was not found on PATH");
+    }
+
+    const syncResult = await runCommand("uv", ["sync", "--frozen"], backendDir);
+    if (syncResult.exitCode !== 0) {
+        throw new Error(
+            `Failed to set up backend environment via uv sync. ${syncResult.stderr || syncResult.stdout}`
+        );
+    }
+}
+
+async function runCommand(
+    command: string,
+    args: string[],
+    cwd: string
+): Promise<{ exitCode: number | null; stdout: string; stderr: string }> {
+    return new Promise((resolve) => {
+        const proc = spawn(command, args, {
+            cwd,
+            env: { ...process.env, PYTHONUNBUFFERED: "1" },
+            stdio: ["ignore", "pipe", "pipe"],
+        });
+
+        let stdout = "";
+        let stderr = "";
+
+        proc.stdout?.on("data", (data: Buffer) => {
+            stdout += data.toString();
+            const text = data.toString().trim();
+            if (text) {
+                outputChannel.appendLine(`[Setup stdout] ${text}`);
+            }
+        });
+
+        proc.stderr?.on("data", (data: Buffer) => {
+            stderr += data.toString();
+            const text = data.toString().trim();
+            if (text) {
+                outputChannel.appendLine(`[Setup stderr] ${text}`);
+            }
+        });
+
+        proc.on("error", (error) => {
+            resolve({ exitCode: 1, stdout, stderr: `${stderr}\n${error.message}` });
+        });
+
+        proc.on("close", (exitCode) => {
+            resolve({ exitCode, stdout, stderr });
+        });
     });
 }
 

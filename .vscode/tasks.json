@@ -9,6 +9,24 @@
                 "cwd": "${workspaceFolder}/extension"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "github-rag: package vsix",
+            "type": "shell",
+            "command": "npm run vsix",
+            "options": {
+                "cwd": "${workspaceFolder}/extension"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "github-rag: install latest vsix",
+            "type": "shell",
+            "command": "latest=$(ls -t github-rag-*.vsix | head -n 1) && code --install-extension \"$latest\" --force",
+            "options": {
+                "cwd": "${workspaceFolder}/extension"
+            },
+            "problemMatcher": []
         }
     ]
 }

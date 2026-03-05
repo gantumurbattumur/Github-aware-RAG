@@ -67,13 +67,16 @@
         }
     },
     "scripts": {
-        "compile": "node esbuild.js",
+        "sync:backend": "node scripts/sync-backend.mjs",
+        "compile": "npm run sync:backend && node esbuild.js",
         "watch": "node esbuild.js --watch",
-        "package": "node esbuild.js --production",
+        "package": "npm run sync:backend && node esbuild.js --production",
+        "vsix": "npm run package && npx @vscode/vsce package --allow-missing-repository",
         "vscode:prepublish": "npm run package",
         "lint": "tsc --noEmit"
     },
     "devDependencies": {
+        "@vscode/vsce": "^3.6.2",
         "@types/node": "^20.11.0",
         "@types/react": "^18.2.48",
         "@types/react-dom": "^18.2.18",

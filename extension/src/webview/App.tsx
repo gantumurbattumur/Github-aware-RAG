@@ -134,6 +134,11 @@ export default function App() {
         vscode.postMessage({ type: "openGitHub", url });
     }, []);
 
+    const filteredResults =
+        filter === "all"
+            ? results
+            : results.filter((result) => result.source_type === filter);
+
     if (!authenticated) {
         return (
             <div style={styles.container}>
@@ -163,10 +168,10 @@ export default function App() {
 
             {error && <div style={styles.error}>{error}</div>}
 
-            {results.length > 0 && (
+            {filteredResults.length > 0 && (
                 <div style={styles.section}>
                     <div style={styles.sectionHeader}>RESULTS</div>
-                    {results.map((result, idx) => (
+                    {filteredResults.map((result, idx) => (
                         <ResultCard
                             key={`${result.repo}-${result.file_path}-${idx}`}
                             result={result}
@@ -181,8 +186,12 @@ export default function App() {
                 <div style={styles.loading}>Searching...</div>
             )}
 
-            {!loading && results.length === 0 && query && !error && (
-                <div style={styles.empty}>No results found. Try a different query.</div>
+            {!loading && query && !error && filteredResults.length === 0 && (
+                <div style={styles.empty}>
+                    {results.length === 0
+                        ? "No results found. Try a different query."
+                        : `No ${filter} results for this query.`}
+                </div>
             )}
 
             <div style={styles.section}>

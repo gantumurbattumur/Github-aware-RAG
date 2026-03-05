@@ -1,0 +1,16 @@
+# Source and tooling
+src/**
+.vscode/**
+scripts/**
+tsconfig.json
+esbuild.js
+
+# Dev artifacts
+node_modules/**
+**/*.map
+
+# Exclude Python virtual envs and caches from bundled backend
+backend/.venv/**
+backend/**/__pycache__/**
+backend/**/*.pyc
+backend/**/*.pyo
