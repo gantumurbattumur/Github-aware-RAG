@@ -22,11 +22,11 @@ export class SearchPanelProvider implements vscode.WebviewViewProvider {
 
     private _view?: vscode.WebviewView;
     private _githubToken: string = "";
-    private _openaiKey: string = "";
 
     constructor(
         private readonly _extensionUri: vscode.Uri,
-        private readonly _backendClient: BackendClient
+        private readonly _backendClient: BackendClient,
+        private readonly _getOpenAIKey: () => Promise<string>
     ) { }
 
     /** Update the stored GitHub token (called on auth change) */
@@ -70,10 +70,6 @@ export class SearchPanelProvider implements vscode.WebviewViewProvider {
     }
 
     private async _handleMessage(message: { type: string;[key: string]: unknown }): Promise<void> {
-        // Read OpenAI key from settings on each request (user may update it)
-        const config = vscode.workspace.getConfiguration("github-rag");
-        this._openaiKey = config.get<string>("openaiApiKey") || "";
-
         switch (message.type) {
             case "getRepos": {
                 const repos = await this._backendClient.getRepos(this._githubToken);
@@ -84,19 +80,20 @@ export class SearchPanelProvider implements vscode.WebviewViewProvider {
             case "query": {
                 const query = message.query as string;
                 const filter = (message.filter as string) || "all";
+                const openaiKey = await this._getOpenAIKey();
 
-                if (!this._openaiKey) {
+                if (!openaiKey) {
                     this.postMessage({
                         type: "error",
                         requestType: "query",
-                        error: "OpenAI API key not configured. Set it in Settings → GitHub RAG → OpenAI API Key.",
+                        error: "OpenAI API key not configured. Run 'GitHub RAG: Set OpenAI API Key' from Command Palette.",
                     });
                     return;
                 }
 
                 const response = await this._backendClient.query(
                     this._githubToken,
-                    this._openaiKey,
+                    openaiKey,
                     query,
                     filter as "all" | "personal" | "starred"
                 );
@@ -107,19 +104,20 @@ export class SearchPanelProvider implements vscode.WebviewViewProvider {
             case "ingest": {
                 const repo = message.repo as string;
                 const sourceType = message.sourceType as "personal" | "starred";
+                const openaiKey = await this._getOpenAIKey();
 
-                if (!this._openaiKey) {
+                if (!openaiKey) {
                     this.postMessage({
                         type: "error",
                         requestType: "ingest",
-                        error: "OpenAI API key not configured. Set it in Settings → GitHub RAG → OpenAI API Key.",
+                        error: "OpenAI API key not configured. Run 'GitHub RAG: Set OpenAI API Key' from Command Palette.",
                     });
                     return;
                 }
 
                 const res = await this._backendClient.ingest(
                     this._githubToken,
-                    this._openaiKey,
+                    openaiKey,
                     repo,
                     sourceType
                 );

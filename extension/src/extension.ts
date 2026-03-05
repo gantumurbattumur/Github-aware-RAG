@@ -8,6 +8,7 @@ import { SearchPanelProvider } from "./panels/SearchPanel";
 
 let serverProcess: ChildProcess | undefined;
 let outputChannel: vscode.OutputChannel;
+const OPENAI_API_KEY_SECRET = "github-rag.openaiApiKey";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     outputChannel = vscode.window.createOutputChannel("GitHub RAG");
@@ -22,8 +23,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Create the sidebar webview provider
     const searchPanelProvider = new SearchPanelProvider(
         context.extensionUri,
-        backendClient
+        backendClient,
+        () => getOpenAIApiKey(context)
     );
+
+    await migrateLegacyOpenAIKeyIfNeeded(context);
 
     // Register the webview view provider
     context.subscriptions.push(
@@ -45,6 +49,43 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     context.subscriptions.push(
         vscode.commands.registerCommand("github-rag.reindex", () => {
             searchPanelProvider.postMessage({ type: "triggerReindex" });
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand("github-rag.setOpenAIApiKey", async () => {
+            const value = await vscode.window.showInputBox({
+                prompt: "Enter your OpenAI API key",
+                placeHolder: "sk-...",
+                password: true,
+                ignoreFocusOut: true,
+            });
+
+            if (!value?.trim()) {
+                return;
+            }
+
+            await context.secrets.store(OPENAI_API_KEY_SECRET, value.trim());
+            outputChannel.appendLine("[Secrets] OpenAI API key saved in SecretStorage");
+            vscode.window.showInformationMessage("GitHub RAG: OpenAI API key saved securely.");
+        })
+    );
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand("github-rag.clearOpenAIApiKey", async () => {
+            const confirmation = await vscode.window.showWarningMessage(
+                "Remove saved OpenAI API key from SecretStorage?",
+                { modal: true },
+                "Remove"
+            );
+
+            if (confirmation !== "Remove") {
+                return;
+            }
+
+            await context.secrets.delete(OPENAI_API_KEY_SECRET);
+            outputChannel.appendLine("[Secrets] OpenAI API key removed from SecretStorage");
+            vscode.window.showInformationMessage("GitHub RAG: OpenAI API key removed.");
         })
     );
 
@@ -91,6 +132,39 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export function deactivate(): void {
     stopBackend();
+}
+
+async function getOpenAIApiKey(context: vscode.ExtensionContext): Promise<string> {
+    const secret = await context.secrets.get(OPENAI_API_KEY_SECRET);
+    if (secret?.trim()) {
+        return secret.trim();
+    }
+
+    const config = vscode.workspace.getConfiguration("github-rag");
+    const legacyValue = config.get<string>("openaiApiKey") || "";
+    if (!legacyValue.trim()) {
+        return "";
+    }
+
+    await context.secrets.store(OPENAI_API_KEY_SECRET, legacyValue.trim());
+    outputChannel.appendLine("[Secrets] Migrated OpenAI API key from settings to SecretStorage");
+    return legacyValue.trim();
+}
+
+async function migrateLegacyOpenAIKeyIfNeeded(context: vscode.ExtensionContext): Promise<void> {
+    const stored = await context.secrets.get(OPENAI_API_KEY_SECRET);
+    if (stored?.trim()) {
+        return;
+    }
+
+    const config = vscode.workspace.getConfiguration("github-rag");
+    const legacyValue = config.get<string>("openaiApiKey") || "";
+    if (!legacyValue.trim()) {
+        return;
+    }
+
+    await context.secrets.store(OPENAI_API_KEY_SECRET, legacyValue.trim());
+    outputChannel.appendLine("[Secrets] Migrated legacy github-rag.openaiApiKey setting to SecretStorage");
 }
 
 // ----- Backend process management -----

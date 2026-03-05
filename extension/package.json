@@ -4,6 +4,23 @@
     "description": "Semantic code reference search across your GitHub repos and starred repos",
     "version": "0.0.1",
     "publisher": "github-rag",
+    "keywords": [
+        "rag",
+        "github",
+        "semantic-search",
+        "code-search",
+        "vscode-extension",
+        "chromadb",
+        "openai"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/tungalag/Github-aware-RAG.git"
+    },
+    "bugs": {
+        "url": "https://github.com/tungalag/Github-aware-RAG/issues"
+    },
+    "homepage": "https://github.com/tungalag/Github-aware-RAG#readme",
     "icon": "resources/icon.png",
     "license": "MIT",
     "engines": {
@@ -41,6 +58,14 @@
             {
                 "command": "github-rag.reindex",
                 "title": "GitHub RAG: Re-index Current Repo"
+            },
+            {
+                "command": "github-rag.setOpenAIApiKey",
+                "title": "GitHub RAG: Set OpenAI API Key"
+            },
+            {
+                "command": "github-rag.clearOpenAIApiKey",
+                "title": "GitHub RAG: Clear OpenAI API Key"
             }
         ],
         "configuration": {
@@ -49,7 +74,7 @@
                 "github-rag.openaiApiKey": {
                     "type": "string",
                     "default": "",
-                    "description": "OpenAI API key for embeddings (text-embedding-3-small) and answer generation (gpt-4o-mini)",
+                    "description": "Legacy fallback only. Prefer Command Palette → GitHub RAG: Set OpenAI API Key (stored in VS Code SecretStorage).",
                     "order": 1
                 },
                 "github-rag.pythonPath": {
