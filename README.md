@@ -1,3 +1,6 @@
+
+https://github.com/user-attachments/assets/72b5ff44-0531-469c-98c4-3d36611f17e7
+
 # GitHub-Aware-RAG
 
 GitHub-Aware-RAG is a VS Code extension that lets you semantically search your own GitHub repos and starred repos without leaving your editor.
