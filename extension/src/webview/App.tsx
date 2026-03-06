@@ -41,6 +41,7 @@ export default function App() {
     const [repos, setRepos] = useState<RepoInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [lastSearchedQuery, setLastSearchedQuery] = useState("");
     const [indexingRepos, setIndexingRepos] = useState<Record<string, IngestProgress>>({});
     const [indexedRepos, setIndexedRepos] = useState<Set<string>>(new Set());
 
@@ -109,14 +110,31 @@ export default function App() {
 
     const handleSearch = useCallback(
         (searchQuery: string) => {
-            if (!searchQuery.trim()) return;
+            const normalizedQuery = searchQuery.trim();
+            if (!normalizedQuery) return;
             setLoading(true);
             setError(null);
             setResults([]);
-            vscode.postMessage({ type: "query", query: searchQuery, filter });
+            setLastSearchedQuery(normalizedQuery);
+            vscode.postMessage({ type: "query", query: normalizedQuery, filter });
         },
         [filter]
     );
+
+    const handleRefresh = useCallback(() => {
+        const queryToRun = query.trim() || lastSearchedQuery;
+        if (!queryToRun) {
+            return;
+        }
+        handleSearch(queryToRun);
+    }, [query, lastSearchedQuery, handleSearch]);
+
+    const handleClearResults = useCallback(() => {
+        setResults([]);
+        setError(null);
+        setLoading(false);
+        setLastSearchedQuery("");
+    }, []);
 
     const handleIngest = useCallback((repoFullName: string, sourceType: "personal" | "starred") => {
         vscode.postMessage({ type: "ingest", repo: repoFullName, sourceType });
@@ -161,9 +179,13 @@ export default function App() {
                 query={query}
                 filter={filter}
                 loading={loading}
+                canRefresh={!!(query.trim() || lastSearchedQuery)}
+                canClear={results.length > 0 || !!error || !!lastSearchedQuery}
                 onQueryChange={setQuery}
                 onFilterChange={setFilter}
                 onSearch={handleSearch}
+                onRefresh={handleRefresh}
+                onClear={handleClearResults}
             />
 
             {error && <div style={styles.error}>{error}</div>}
@@ -186,7 +208,7 @@ export default function App() {
                 <div style={styles.loading}>Searching...</div>
             )}
 
-            {!loading && query && !error && filteredResults.length === 0 && (
+            {!loading && lastSearchedQuery && !error && filteredResults.length === 0 && (
                 <div style={styles.empty}>
                     {results.length === 0
                         ? "No results found. Try a different query."

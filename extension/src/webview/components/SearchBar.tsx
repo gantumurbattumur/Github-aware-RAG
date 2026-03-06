@@ -6,18 +6,26 @@ interface SearchBarProps {
     query: string;
     filter: SourceFilter;
     loading: boolean;
+    canRefresh: boolean;
+    canClear: boolean;
     onQueryChange: (q: string) => void;
     onFilterChange: (f: SourceFilter) => void;
     onSearch: (q: string) => void;
+    onRefresh: () => void;
+    onClear: () => void;
 }
 
 export default function SearchBar({
     query,
     filter,
     loading,
+    canRefresh,
+    canClear,
     onQueryChange,
     onFilterChange,
     onSearch,
+    onRefresh,
+    onClear,
 }: SearchBarProps) {
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -40,6 +48,22 @@ export default function SearchBar({
                     disabled={loading}
                     style={styles.input}
                 />
+                <button
+                    onClick={onRefresh}
+                    disabled={loading || !canRefresh}
+                    style={styles.actionButton}
+                    title="Run the current query again"
+                >
+                    Refresh
+                </button>
+                <button
+                    onClick={onClear}
+                    disabled={loading || !canClear}
+                    style={styles.actionButton}
+                    title="Clear current search results"
+                >
+                    Clear
+                </button>
             </div>
             <div style={styles.filterRow}>
                 <span style={styles.filterLabel}>Filter:</span>
@@ -68,6 +92,7 @@ const styles: Record<string, React.CSSProperties> = {
     },
     inputRow: {
         display: "flex",
+        gap: "6px",
     },
     input: {
         flex: 1,
@@ -104,5 +129,16 @@ const styles: Record<string, React.CSSProperties> = {
         backgroundColor: "var(--vscode-button-background)",
         color: "var(--vscode-button-foreground)",
         border: "1px solid var(--vscode-button-background)",
+    },
+    actionButton: {
+        padding: "0 10px",
+        border: "1px solid var(--vscode-button-secondaryBorder, var(--vscode-input-border, transparent))",
+        borderRadius: "2px",
+        backgroundColor: "var(--vscode-button-secondaryBackground)",
+        color: "var(--vscode-button-secondaryForeground)",
+        fontSize: "11px",
+        cursor: "pointer",
+        fontFamily: "var(--vscode-font-family)",
+        flexShrink: 0,
     },
 };
