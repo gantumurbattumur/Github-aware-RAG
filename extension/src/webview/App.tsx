@@ -54,10 +54,16 @@ export default function App() {
                     setAuthenticated(msg.authenticated);
                     if (msg.authenticated) {
                         vscode.postMessage({ type: "getRepos" });
+                        vscode.postMessage({ type: "getIndexedRepos" });
+                    } else {
+                        setIndexedRepos(new Set());
                     }
                     break;
                 case "repos":
                     setRepos(msg.data);
+                    break;
+                case "indexedRepos":
+                    setIndexedRepos(new Set(msg.data));
                     break;
                 case "results":
                     setResults(msg.data);

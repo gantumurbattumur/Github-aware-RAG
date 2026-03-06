@@ -77,6 +77,12 @@ export class SearchPanelProvider implements vscode.WebviewViewProvider {
                 break;
             }
 
+            case "getIndexedRepos": {
+                const indexedRepos = await this._backendClient.getIndexedRepos(this._githubToken);
+                this.postMessage({ type: "indexedRepos", data: indexedRepos });
+                break;
+            }
+
             case "query": {
                 const query = message.query as string;
                 const filter = (message.filter as string) || "all";

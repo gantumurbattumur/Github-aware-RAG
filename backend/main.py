@@ -125,6 +125,13 @@ async def get_repos(x_github_token: str | None = Header(None)):
         gh.close()
 
 
+@app.get("/indexed-repos", response_model=list[str])
+async def get_indexed_repos(x_github_token: str | None = Header(None)):
+    """Return repository full names that already have persisted index metadata."""
+    _require_github_token(x_github_token)
+    return metadata_db.get_indexed_repos()
+
+
 @app.post("/ingest", response_model=IngestResponse)
 async def ingest(
     request: IngestRequest,

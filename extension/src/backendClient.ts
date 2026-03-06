@@ -85,6 +85,13 @@ export class BackendClient {
         });
     }
 
+    /** Fetch repos that already have persisted index metadata */
+    async getIndexedRepos(githubToken: string): Promise<string[]> {
+        return this.request("/indexed-repos", {
+            headers: { "X-GitHub-Token": githubToken },
+        });
+    }
+
     /** Start ingestion for a single repo */
     async ingest(
         githubToken: string,

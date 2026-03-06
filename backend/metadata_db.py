@@ -99,3 +99,11 @@ class MetadataDB:
                 (repo_full_name,),
             ).fetchall()
             return {row[0]: row[1] for row in rows}
+
+    def get_indexed_repos(self) -> list[str]:
+        """Return all repository names that currently have indexed metadata."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT DISTINCT repo_full_name FROM file_metadata ORDER BY repo_full_name ASC"
+            ).fetchall()
+            return [row[0] for row in rows]
